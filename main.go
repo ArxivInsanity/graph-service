@@ -4,22 +4,26 @@ package main
 
 import (
 	. "github.com/ArxivInsanity/graph-service/src/common"
+	. "github.com/ArxivInsanity/graph-service/src/db"
 	. "github.com/ArxivInsanity/graph-service/src/routes"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 	"net/http"
 )
 
-func main() {
-
+func init() {
 	// loading env vars
 	loadEnv()
+	Init()
+}
+
+func main() {
 
 	// init engine
 	r := gin.Default()
 
 	// load routes
-	graphBuilderGroup := r.Group("/graphBuilderGroup")
+	graphBuilderGroup := r.Group("/graphBuilder")
 	{
 		GraphBuilderRoutes(graphBuilderGroup)
 	}

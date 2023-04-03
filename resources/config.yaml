@@ -1,5 +1,5 @@
 neo4j:
   connectionUri: "neo4j+s://588ce1ae.databases.neo4j.io"
   username: neo4j
-  credential:
+  credential: ${NEO4J_CRED}
   instanceName: Instance01
