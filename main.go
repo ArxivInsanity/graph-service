@@ -20,10 +20,14 @@ func main() {
 	// init engine
 	r := gin.Default()
 
+	// get Neo4j DB connection
+	neo4jContext, neo4jSession := GetNeo4jContextAndSession()
+
 	// load routes
 	graphBuilderGroup := r.Group("/graphBuilder")
 	{
-		graphBuilderGroup.Use(GetNeo4jContextAndSession)
+		// inject neo4j ctx and session in middleware
+		graphBuilderGroup.Use(InjectNeo4jContextAndSession(neo4jContext, neo4jSession))
 		GraphBuilderRoutes(graphBuilderGroup)
 	}
 
@@ -34,7 +38,7 @@ func main() {
 	})
 
 	err := r.Run()
-	PanicOnErr(err)
+	PanicOnClosureError(err, neo4jContext, neo4jSession)
 }
 
 func loadEnv() {

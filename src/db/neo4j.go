@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"github.com/spf13/viper"
-	"log"
+	"os"
 )
 
 const Neo4jContextKey string = "neo4jContext"
@@ -19,16 +19,15 @@ type Neo4jConnectionConfig struct {
 }
 
 func getNeo4jConnectionConfig() Neo4jConnectionConfig {
-	log.Println(viper.AllKeys())
 	return Neo4jConnectionConfig{
 		Uri:        viper.Get("neo4j.connectionUri").(string),
 		Username:   viper.Get("neo4j.username").(string),
-		Credential: viper.Get("neo4j.credential").(string),
+		Credential: os.Getenv("NEO4J_CRED"), // read credential from os env directly
 	}
 }
 
 // GetNeo4jContextAndSession Exposes neo4j context and session created with default pooling config
-func GetNeo4jContextAndSession(ginContext *gin.Context) {
+func GetNeo4jContextAndSession() (context.Context, neo4j.SessionWithContext) {
 	neo4jConnectionConfig := getNeo4jConnectionConfig()
 	neo4jContext := context.Background()
 
@@ -39,7 +38,14 @@ func GetNeo4jContextAndSession(ginContext *gin.Context) {
 	neo4jSession := neo4jDriver.NewSession(neo4jContext, neo4j.SessionConfig{})
 	PanicOnClosureError(err, neo4jContext, neo4jSession)
 
-	// setting in gin context
-	ginContext.Set("neo4jContext", neo4jContext)
-	ginContext.Set("neo4jSession", neo4jSession)
+	return neo4jContext, neo4jSession
+}
+
+// InjectNeo4jContextAndSession Is a closure function that injects context and session
+func InjectNeo4jContextAndSession(neo4jContext context.Context, neo4jSession neo4j.SessionWithContext) gin.HandlerFunc {
+	return func(ginContext *gin.Context) {
+		// setting in gin context
+		ginContext.Set(Neo4jContextKey, neo4jContext)
+		ginContext.Set(Neo4jSessionKey, neo4jSession)
+	}
 }
