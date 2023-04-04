@@ -6,8 +6,10 @@ type contextCloser interface {
 	Close(ctx context.Context) error
 }
 
-func PanicOnClosureError(ctx context.Context, closer contextCloser) {
-	PanicOnErr(closer.Close(ctx))
+func PanicOnClosureError(err error, ctx context.Context, closer contextCloser) {
+	if err != nil {
+		PanicOnErr(closer.Close(ctx))
+	}
 }
 
 func PanicOnErr(err error) {

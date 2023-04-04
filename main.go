@@ -14,17 +14,16 @@ import (
 func init() {
 	// loading env vars
 	loadEnv()
-	Init()
 }
 
 func main() {
-
 	// init engine
 	r := gin.Default()
 
 	// load routes
 	graphBuilderGroup := r.Group("/graphBuilder")
 	{
+		graphBuilderGroup.Use(GetNeo4jContextAndSession)
 		GraphBuilderRoutes(graphBuilderGroup)
 	}
 
