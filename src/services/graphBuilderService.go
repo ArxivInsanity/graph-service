@@ -1,9 +1,8 @@
-package controller
+package services
 
 import (
-	"context"
-	. "github.com/ArxivInsanity/graph-service/src/common"
 	. "github.com/ArxivInsanity/graph-service/src/db"
+	. "github.com/ArxivInsanity/graph-service/src/util"
 	"github.com/gin-gonic/gin"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"log"
@@ -12,10 +11,7 @@ import (
 func GetGraph() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		// get ctx and session from gin context
-		dbContextInterface, _ := ctx.Get(Neo4jContextKey)
-		dbSessionInterface, _ := ctx.Get(Neo4jSessionKey)
-		dbContext, dbSession := dbContextInterface.(context.Context), dbSessionInterface.(neo4j.SessionWithContext)
-
+		dbContext, dbSession := GetDBConnectionFromContext(ctx)
 		result, err := dbSession.Run(dbContext, "MATCH (n) RETURN n", map[string]any{})
 		paper, err := neo4j.CollectTWithContext[neo4j.Node](dbContext, result,
 			// Extract the single record and transform it with a function

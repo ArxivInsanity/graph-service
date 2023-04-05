@@ -2,7 +2,7 @@ package db
 
 import (
 	"context"
-	. "github.com/ArxivInsanity/graph-service/src/common"
+	. "github.com/ArxivInsanity/graph-service/src/util"
 	"github.com/gin-gonic/gin"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"github.com/spf13/viper"

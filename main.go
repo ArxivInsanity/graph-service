@@ -3,9 +3,9 @@
 package main
 
 import (
-	. "github.com/ArxivInsanity/graph-service/src/common"
 	. "github.com/ArxivInsanity/graph-service/src/db"
 	. "github.com/ArxivInsanity/graph-service/src/routes"
+	. "github.com/ArxivInsanity/graph-service/src/util"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 	"net/http"
@@ -38,7 +38,7 @@ func main() {
 	})
 
 	err := r.Run()
-	PanicOnClosureError(err, neo4jContext, neo4jSession)
+	defer PanicOnClosureError(err, neo4jContext, neo4jSession)
 }
 
 func loadEnv() {
