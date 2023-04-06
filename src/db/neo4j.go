@@ -9,9 +9,6 @@ import (
 	"os"
 )
 
-const Neo4jContextKey string = "neo4jContext"
-const Neo4jSessionKey string = "neo4jSession"
-
 type Neo4jConnectionConfig struct {
 	Uri        string
 	Username   string

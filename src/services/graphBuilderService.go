@@ -1,7 +1,6 @@
 package services
 
 import (
-	. "github.com/ArxivInsanity/graph-service/src/db"
 	. "github.com/ArxivInsanity/graph-service/src/util"
 	"github.com/gin-gonic/gin"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
@@ -10,6 +9,7 @@ import (
 
 func GetGraph() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+
 		// get ctx and session from gin context
 		dbContext, dbSession := GetDBConnectionFromContext(ctx)
 		result, err := dbSession.Run(dbContext, "MATCH (n) RETURN n", map[string]any{})

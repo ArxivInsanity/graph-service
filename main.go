@@ -30,6 +30,12 @@ func main() {
 		graphBuilderGroup.Use(InjectNeo4jContextAndSession(neo4jContext, neo4jSession))
 		GraphBuilderRoutes(graphBuilderGroup)
 	}
+	graphSearchGroup := r.Group("/graphSearch")
+	{
+		// inject neo4j ctx and session in middleware
+		graphSearchGroup.Use(InjectNeo4jContextAndSession(neo4jContext, neo4jSession))
+		GraphSearchRoutes(graphSearchGroup)
+	}
 
 	// default route
 	r.GET("/", func(c *gin.Context) {
