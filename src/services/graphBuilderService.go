@@ -1,27 +1,42 @@
 package services
 
 import (
+	"encoding/json"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"os"
+
 	. "github.com/ArxivInsanity/graph-service/src/util"
 	"github.com/gin-gonic/gin"
-	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
-	"log"
+	"github.com/spf13/viper"
 )
 
-func GetGraph() gin.HandlerFunc {
+func BuildGraphHndler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-
-		// get ctx and session from gin context
-		dbContext, dbSession := GetDBConnectionFromContext(ctx)
-		result, err := dbSession.Run(dbContext, "MATCH (n) RETURN n", map[string]any{})
-		paper, err := neo4j.CollectTWithContext[neo4j.Node](dbContext, result,
-			// Extract the single record and transform it with a function
-			func(record *neo4j.Record) (neo4j.Node, error) {
-				// Extract the record value by the specified key
-				// and map it to the specified generic type constraint
-				paper, _, err := neo4j.GetRecordValue[neo4j.Node](record, "n")
-				return paper, err
-			})
-		PanicOnErr(err)
-		log.Printf("%v", paper)
+		paperId := ctx.Param("paperId")
+		BuildGraph(paperId, ctx)
 	}
+}
+
+func BuildGraph(seedPaperId string, ctx *gin.Context) {
+	node := GetPaperDetails((seedPaperId))
+	log.Printf("Build graph Paper details : %v", node)
+	ctx.IndentedJSON(http.StatusOK, node)
+}
+
+func GetPaperDetails(paperId string) Node {
+	url := viper.Get("s2ag.urlRoot").(string) + paperId + viper.Get("s2ag.paperUrlFields").(string)
+	client := &http.Client{}
+	req, _ := http.NewRequest("GET", url, nil)
+	req.Header.Add("x-api-key", os.Getenv("S2AG_KEY"))
+	resp, err := client.Do(req)
+	PanicOnErr(err)
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	PanicOnErr(err)
+	var node Node
+	err = json.Unmarshal(body, &node)
+	PanicOnErr(err)
+	return node
 }
