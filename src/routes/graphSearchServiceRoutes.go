@@ -7,5 +7,5 @@ import (
 
 func GraphSearchRoutes(routerGroup *gin.RouterGroup) {
 	// defining graphBuilder Routes
-	routerGroup.GET("/isSeed/:paperId", services.IsSeedPaper())
+	routerGroup.GET("/isSeed/:paperId", services.IsSeedPaperHandler())
 }
