@@ -44,15 +44,7 @@ func IsSeedPaper(paperId string, ctx *gin.Context) bool {
 	return isSeed.(bool)
 }
 
-type Node struct {
-	paperId       string
-	citationCount int64
-	year          int64
-	title         string
-	reference     []*Node
-}
-
-func GetNode(rootPaperId string, ctx *gin.Context) *Node {
+func GetNode(rootPaperId string, ctx *gin.Context) Node {
 	dbContext, dbSession := GetDBConnectionFromContext(ctx)
 	cypher := "MATCH (p:PAPER {paperId: $rootPaperId}) RETURN p"
 	// referenceCypher := "MATCH (p:PAPER {paperId: $rootPaperId})-[r:REFERENCE]-(n:PAPER) RETURN p, n"
@@ -65,16 +57,16 @@ func GetNode(rootPaperId string, ctx *gin.Context) *Node {
 	PanicOnErr(err)
 	nodeNeo4jRecord, _ := nodeRecord[0].Get("p")
 	nodeNeo4jProps := nodeNeo4jRecord.(dbtype.Node).Props
-	n := Node{paperId: rootPaperId,
-		citationCount: nodeNeo4jProps["citationCount"].(int64),
-		year:          nodeNeo4jProps["year"].(int64),
-		title:         nodeNeo4jProps["title"].(string)}
-	return &n
+	n := Node{PaperId: rootPaperId,
+		CitationCount: nodeNeo4jProps["citationCount"].(int64),
+		Year:          nodeNeo4jProps["year"].(int64),
+		Title:         nodeNeo4jProps["title"].(string)}
+	return n
 }
 
-func bfs(n *Node, depth int, citation bool, ctx *gin.Context) map[string]Node {
+func bfs(n Node, depth int, citation bool, ctx *gin.Context) map[string]Node {
 	dbContext, dbSession := GetDBConnectionFromContext(ctx)
-	queue := []*Node{n}
+	queue := []Node{n}
 	visited := map[string]Node{}
 
 	for len(queue) > 0 && depth > 0 {
@@ -84,7 +76,7 @@ func bfs(n *Node, depth int, citation bool, ctx *gin.Context) map[string]Node {
 			queue = queue[1:]
 			cypher := "MATCH (p:PAPER {paperId: $paperId}) - [r:REFERENCES] -> (n:PAPER) RETURN n"
 			cypherParam := map[string]any{
-				"paperId": current.paperId,
+				"paperId": current.PaperId,
 			}
 			result, err := dbSession.Run(dbContext, cypher, cypherParam)
 			PanicOnErr(err)
@@ -93,21 +85,21 @@ func bfs(n *Node, depth int, citation bool, ctx *gin.Context) map[string]Node {
 			for i := 0; i < len(linkRecord); i++ {
 				linkNeo4jRecord, _ := linkRecord[i].Get("n")
 				linkNeo4jProps := linkNeo4jRecord.(dbtype.Node).Props
-				child := Node{paperId: linkNeo4jProps["paperId"].(string),
-					citationCount: linkNeo4jProps["citationCount"].(int64),
-					year:          linkNeo4jProps["year"].(int64),
-					title:         linkNeo4jProps["title"].(string)}
-				current.reference = append(current.reference, &child)
+				child := Node{PaperId: linkNeo4jProps["paperId"].(string),
+					CitationCount: linkNeo4jProps["citationCount"].(int64),
+					Year:          linkNeo4jProps["year"].(int64),
+					Title:         linkNeo4jProps["title"].(string)}
+				current.Reference = append(current.Reference, child)
 			}
-			for _, child := range current.reference {
-				if _, exists := visited[child.paperId]; !exists {
+			for _, child := range current.Reference {
+				if _, exists := visited[child.PaperId]; !exists {
 					queue = append(queue, child)
 				}
 			}
-			visited[current.paperId] = *current
+			visited[current.PaperId] = current
 			cypher = "MATCH (p:PAPER {paperId: $paperId}) <- [r:REFERENCES] - (n:PAPER) RETURN n"
 			cypherParam = map[string]any{
-				"paperId": current.paperId,
+				"paperId": current.PaperId,
 			}
 			result, err = dbSession.Run(dbContext, cypher, cypherParam)
 			PanicOnErr(err)
@@ -116,12 +108,12 @@ func bfs(n *Node, depth int, citation bool, ctx *gin.Context) map[string]Node {
 			for i := 0; i < len(linkRecord); i++ {
 				linkNeo4jRecord, _ := linkRecord[i].Get("n")
 				linkNeo4jProps := linkNeo4jRecord.(dbtype.Node).Props
-				parent := Node{paperId: linkNeo4jProps["paperId"].(string),
-					citationCount: linkNeo4jProps["citationCount"].(int64),
-					year:          linkNeo4jProps["year"].(int64),
-					title:         linkNeo4jProps["title"].(string)}
-				if _, exists := visited[parent.paperId]; !exists {
-					queue = append(queue, &parent)
+				parent := Node{PaperId: linkNeo4jProps["paperId"].(string),
+					CitationCount: linkNeo4jProps["citationCount"].(int64),
+					Year:          linkNeo4jProps["year"].(int64),
+					Title:         linkNeo4jProps["title"].(string)}
+				if _, exists := visited[parent.PaperId]; !exists {
+					queue = append(queue, parent)
 				}
 			}
 		}
