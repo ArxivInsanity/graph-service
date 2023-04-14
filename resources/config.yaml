@@ -3,7 +3,7 @@ neo4j:
   username: neo4j
   instanceName: Instance01
 s2ag:
-  urlRoot: "https://api.semanticscholar.org/graph/v1/paper"
+  urlRoot: "https://api.semanticscholar.org/graph/v1/paper/"
   paperUrlFields: "?fields=year,citationCount,title,authors"
   citationUrlFields: "/citation?fields=paperId,isinfluential"
   referenceUrlFields: "/references?fields=paperId,isinfluential"
