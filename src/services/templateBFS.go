@@ -1,14 +1,14 @@
 package services
 
-type Node struct {
+type DummyNode struct {
 	name       string
-	neighbours []*Node
+	neighbours []*DummyNode
 }
 
-func (n *Node) bfs(depth int) map[string]Node {
+func (n *DummyNode) bfs(depth int) map[string]DummyNode {
 
-	queue := []*Node{n}
-	visited := map[string]Node{}
+	queue := []*DummyNode{n}
+	visited := map[string]DummyNode{}
 
 	for len(queue) > 0 || depth > 0 {
 		level_size := len(queue)
