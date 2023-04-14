@@ -25,6 +25,7 @@ func IsSeedPaper(paperId string, ctx *gin.Context) bool {
 		"paperId": paperId,
 	}
 	result, err := dbSession.Run(dbContext, isSeedCypher, cypherParam)
+	PanicOnErr(err)
 	record, err := neo4j.CollectWithContext(dbContext, result, err)
 	isSeed, _ := record[0].Get("isSeed")
 	log.Printf("Paper: %s is Seed Paper: %v", paperId, isSeed)
