@@ -20,7 +20,7 @@ func IsSeedPaperHandler() gin.HandlerFunc {
 
 func IsSeedPaper(paperId string, ctx *gin.Context) bool {
 	dbContext, dbSession := GetDBConnectionFromContext(ctx)
-	isSeedCypher := "RETURN EXISTS( (:SEED_PAPER)-[:SEED]-(:PAPER {title: $title})) as isSeed"
+	isSeedCypher := "RETURN EXISTS( (:SEED_PAPER)-[:SEED]-(:PAPER {paperId: $paperId})) as isSeed"
 	cypherParam := map[string]any{
 		"paperId": paperId,
 	}
