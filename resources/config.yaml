@@ -2,3 +2,7 @@ neo4j:
   connectionUri: "neo4j+s://588ce1ae.databases.neo4j.io"
   username: neo4j
   instanceName: Instance01
+redis:
+  connectionUri:
+  username:
+  

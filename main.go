@@ -23,6 +23,8 @@ func main() {
 	// get Neo4j DB connection
 	neo4jContext, neo4jSession := GetNeo4jContextAndSession()
 
+	// get Redis Connection
+
 	// load routes
 	graphBuilderGroup := r.Group("/graphBuilder")
 	{
