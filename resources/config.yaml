@@ -1,13 +1,15 @@
 neo4j:
-  connectionUri: "neo4j+s://588ce1ae.databases.neo4j.io"
+  connectionUri: neo4j+s://588ce1ae.databases.neo4j.io
   username: neo4j
   instanceName: Instance01
+
 s2ag:
   buffer: "&limit=30"
-  urlRoot: "https://api.semanticscholar.org/graph/v1/paper/"
-  paperUrlFields: "?fields=year,citationCount,title,authors"
-  citationUrlFields: "/citation?fields=paperId,isinfluential"
-  referenceUrlFields: "/references?fields=paperId,isinfluential"
+  urlRoot: https://api.semanticscholar.org/graph/v1/paper/
+  paperUrlFields: ?fields=year,citationCount,title,authors${buffer}
+  citationUrlFields: /citation?fields=paperId,isinfluential${buffer}
+  referenceUrlFields: /references?fields=paperId,isinfluential${buffer}
+  
 graph:
   depth: 5
   refBreadth: 5
