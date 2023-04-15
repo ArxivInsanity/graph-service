@@ -6,11 +6,11 @@ neo4j:
 s2ag:
   buffer: "&limit=30"
   urlRoot: https://api.semanticscholar.org/graph/v1/paper/
-  paperUrlFields: ?fields=year,citationCount,title,authors${buffer}
-  citationUrlFields: /citation?fields=paperId,isinfluential${buffer}
-  referenceUrlFields: /references?fields=paperId,isinfluential${buffer}
-  
+  paperUrlFields: ?fields=year,citationCount,title,authors
+  citationUrlFields: /citations?fields=paperId,isInfluential
+  referenceUrlFields: /references?fields=paperId,isInfluential
+
 graph:
-  depth: 5
-  refBreadth: 5
-  citBreadth: 5
+  depth: 2
+  refBreadth: 2
+  citBreadth: 2
