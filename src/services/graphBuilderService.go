@@ -32,7 +32,7 @@ func GetPaperNode(paperId string) Node {
 	return node
 }
 
-func GetReferences(paperId string, reference bool, breadth int) []NodeRefences {
+func GetReferences(paperId string, reference bool, breadth int) []NodeReferences {
 	url := viper.GetString("s2ag.urlRoot") + paperId
 	if reference {
 		url += viper.GetString("s2ag.referenceUrlFields")
@@ -43,7 +43,7 @@ func GetReferences(paperId string, reference bool, breadth int) []NodeRefences {
 	var resp ResponseReferences
 	err := json.Unmarshal(FetchFromS2ag(url), &resp)
 	PanicOnErr(err)
-	// return []NodeRefences{}
+	// return []NodeReferences{}
 	if len(resp.Data) <= breadth {
 		return resp.Data
 	} else {
@@ -58,7 +58,7 @@ func GetReferences(paperId string, reference bool, breadth int) []NodeRefences {
 	}
 }
 
-func GetNodeReferences(nodeReferences []NodeRefences, reference bool) []Node {
+func GetNodeReferences(nodeReferences []NodeReferences, reference bool) []Node {
 	var nodes []Node
 	for _, child := range nodeReferences {
 		paperId := ""
@@ -75,7 +75,7 @@ func GetNodeReferences(nodeReferences []NodeRefences, reference bool) []Node {
 func BfsBuilder(seedPaperId string, ctx *gin.Context) map[string]Node {
 	depth := viper.GetInt("graph.depth")
 	breadth := viper.GetInt("graph.refBreadth")
-	var nodeRef []NodeRefences
+	var nodeRef []NodeReferences
 	var nodes []Node
 	n := GetPaperNode(seedPaperId)
 	queue := []Node{n}

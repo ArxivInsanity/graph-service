@@ -1,10 +1,10 @@
 package util
 
 type ResponseReferences struct {
-	Data []NodeRefences `json:"data"`
+	Data []NodeReferences `json:"data"`
 }
 
-type NodeRefences struct {
+type NodeReferences struct {
 	IsInfluential bool `json:"isInfluential"`
 	CitedPaper    struct {
 		RefPaperId string `json:"paperId"`
