@@ -1,7 +1,9 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
+	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"log"
 	"net/http"
 	"sort"
@@ -11,17 +13,58 @@ import (
 	"github.com/spf13/viper"
 )
 
-func BuildGraphHndler() gin.HandlerFunc {
+func BuildGraphHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		paperId := ctx.Param("paperId")
 		BuildGraph(paperId, ctx)
 	}
 }
 
+func writeGraphToDB(graph map[string]Node, ctx *gin.Context) {
+	dbContext, dbSession := GetDBConnectionFromContext(ctx)
+	for paperId, node := range graph {
+		log.Printf("Persisting graph for seed paper : %s", paperId)
+		checkAndCreateNode(node, dbContext, dbSession)
+
+		// iterate through references and attach the relations
+		if node.Reference != nil {
+			for _, childNode := range node.Reference {
+				checkAndCreateNode(childNode, dbContext, dbSession)
+				checkAndCreateRelation(node, childNode, dbContext, dbSession)
+			}
+		}
+	}
+}
+
+func checkAndCreateNode(node Node, dbContext context.Context, dbSession neo4j.SessionWithContext) {
+	cypher := "MERGE (p: PAPER {paperId: $paperId, citationCount: $citationCount, title: $title, year: $year}) return p"
+	cypherParam := map[string]any{
+		"paperId":       node.PaperId,
+		"citationCount": node.CitationCount,
+		"title":         node.Title,
+		"year":          node.Year,
+	}
+	_, err := dbSession.Run(dbContext, cypher, cypherParam)
+	PanicOnErr(err)
+	log.Printf("Created node for Paper: %s", node.PaperId)
+}
+
+func checkAndCreateRelation(node Node, childNode Node, dbContext context.Context, dbSession neo4j.SessionWithContext) {
+	cypher := "MATCH (p:PAPER {paperId: $paperId}), (q:PAPER {paperId: $childPaperId}) MERGE (p)-[r: REFERENCES]->(q)"
+	cypherParam := map[string]any{
+		"paperId":      node.PaperId,
+		"childPaperId": childNode.PaperId,
+	}
+	_, err := dbSession.Run(dbContext, cypher, cypherParam)
+	PanicOnErr(err)
+	log.Printf("Attached reference relationship paper{%s} -> paper{%s}", node.PaperId, childNode.PaperId)
+}
+
 func BuildGraph(seedPaperId string, ctx *gin.Context) {
-	node := BfsBuilder(seedPaperId, ctx)
-	log.Printf("Build graph Paper details : %v", node)
-	ctx.IndentedJSON(http.StatusOK, node)
+	graph := BfsBuilder(seedPaperId, ctx)
+	log.Printf("Build graph Paper details : %v", graph)
+	writeGraphToDB(graph, ctx)
+	ctx.IndentedJSON(http.StatusOK, graph)
 }
 
 func GetPaperNode(paperId string) Node {

@@ -23,6 +23,10 @@ func GraphHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		paperId := ctx.Param("paperId")
 		log.Printf("graph Paper handler URL Params: %v", paperId)
+		isSeed := IsSeedPaper(paperId, ctx)
+		if !isSeed {
+			BuildGraph(paperId, ctx)
+		}
 		seedNode := GetNode(paperId, ctx)
 		visited := bfs(seedNode, 3, true, ctx)
 		ctx.JSON(http.StatusOK, visited)

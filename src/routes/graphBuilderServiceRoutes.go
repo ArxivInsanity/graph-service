@@ -7,5 +7,5 @@ import (
 
 func GraphBuilderRoutes(routerGroup *gin.RouterGroup) {
 	// defining graphBuilder Routes
-	routerGroup.GET("/:paperId", services.BuildGraphHndler())
+	routerGroup.GET("/:paperId", services.BuildGraphHandler())
 }
