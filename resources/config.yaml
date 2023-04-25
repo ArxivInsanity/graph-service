@@ -16,3 +16,5 @@ graph:
   depth: 2
   refBreadth: 2
   citBreadth: 2
+service:
+  baseUrl: "http://localhost:8080"

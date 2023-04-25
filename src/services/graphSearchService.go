@@ -1,6 +1,7 @@
 package services
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 
@@ -15,7 +16,7 @@ func IsSeedPaperHandler() gin.HandlerFunc {
 		paperId := ctx.Param("paperId")
 		log.Printf("Seed Paper handler URL Params: %v", paperId)
 		isSeed := IsSeedPaper(paperId, ctx)
-		ctx.JSON(http.StatusOK, isSeed)
+		ctx.IndentedJSON(http.StatusOK, isSeed)
 	}
 }
 
@@ -23,7 +24,13 @@ func GraphHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		paperId := ctx.Param("paperId")
 		log.Printf("graph Paper handler URL Params: %v", paperId)
-		isSeed := IsSeedPaper(paperId, ctx)
+
+		// check if it is a seed paper
+		isSeedRespBody := FetchFromGraphService("/graphSearch/isSeed/" + paperId)
+		var isSeed bool
+		err := json.Unmarshal(isSeedRespBody, &isSeed)
+		PanicOnErr(err)
+
 		if !isSeed {
 			BuildGraph(paperId, ctx)
 			addSeedRelation(paperId, ctx)
