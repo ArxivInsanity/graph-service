@@ -26,6 +26,7 @@ func GraphHandler() gin.HandlerFunc {
 		isSeed := IsSeedPaper(paperId, ctx)
 		if !isSeed {
 			BuildGraph(paperId, ctx)
+			addSeedRelation(paperId, ctx)
 		}
 		seedNode := GetNode(paperId, ctx)
 		visited := bfs(seedNode, 3, true, ctx)
@@ -66,6 +67,16 @@ func GetNode(rootPaperId string, ctx *gin.Context) Node {
 		Year:          nodeNeo4jProps["year"].(int64),
 		Title:         nodeNeo4jProps["title"].(string)}
 	return n
+}
+
+func addSeedRelation(seedPaperId string, ctx *gin.Context) {
+	dbContext, dbSession := GetDBConnectionFromContext(ctx)
+	cypher := "MATCH (n: PAPER {paperId: $paperId}), (s: SEED_PAPER) MERGE (s) - [r:SEED] -> (n) RETURN r "
+	cypherParam := map[string]any{
+		"paperId": seedPaperId,
+	}
+	_, err := dbSession.Run(dbContext, cypher, cypherParam)
+	PanicOnErr(err)
 }
 
 func bfs(n Node, depth int, citation bool, ctx *gin.Context) map[string]Node {

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"log"
-	"net/http"
 	"sort"
 
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
@@ -65,7 +64,7 @@ func BuildGraph(seedPaperId string, ctx *gin.Context) {
 	graph := BfsBuilder(seedPaperId, ctx)
 	log.Printf("Build graph Paper details : %v", graph)
 	writeGraphToDB(graph, ctx)
-	ctx.IndentedJSON(http.StatusOK, graph)
+	//ctx.IndentedJSON(http.StatusOK, graph)
 }
 
 func GetPaperNode(paperId string) Node {
