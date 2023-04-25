@@ -1,10 +1,13 @@
 package db
 
 import (
+	cache "github.com/chenyahui/gin-cache"
 	"github.com/chenyahui/gin-cache/persist"
+	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis/v8"
 	"github.com/spf13/viper"
 	"os"
+	"time"
 )
 
 func GetRedisClient() *persist.RedisStore {
@@ -15,4 +18,8 @@ func GetRedisClient() *persist.RedisStore {
 		Password: os.Getenv("REDIS_CRED"),
 		DB:       viper.GetInt("redis.database"),
 	}))
+}
+
+func CachingMiddleWare(redisStore *persist.RedisStore) gin.HandlerFunc {
+	return cache.CacheByRequestURI(redisStore, 24*time.Hour)
 }
