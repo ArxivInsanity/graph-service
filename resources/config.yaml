@@ -3,8 +3,9 @@ neo4j:
   username: neo4j
   instanceName: Instance01
 redis:
-  connectionUri:
-  username:
+  connectionUri: redis-11919.c124.us-central1-1.gce.cloud.redislabs.com:11919
+  username: arxivinsanity
+  database: 0
 s2ag:
   buffer: "&limit=30"
   urlRoot: https://api.semanticscholar.org/graph/v1/paper/

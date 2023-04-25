@@ -1,31 +1,18 @@
 package db
 
-//
-//import (
-//	"context"
-//	"errors"
-//	"github.com/go-redis/redis"
-//)
-//
-//type Redis struct {
-//	Client *redis.Client
-//}
-//
-//var (
-//	ErrNil = errors.New("no matching record found in redis database")
-//	Ctx    = context.
-//)
-//
-//func GetRedisClient(address string) (*Redis, error) {
-//	client := redis.NewClient(&redis.Options{
-//		Addr:     address,
-//		Password: "",
-//		DB:       0,
-//	})
-//	if err := client.Ping(Ctx).Err(); err != nil {
-//		return nil, err
-//	}
-//	return &Redis{
-//		Client: client,
-//	}, nil
-//}
+import (
+	"github.com/chenyahui/gin-cache/persist"
+	"github.com/go-redis/redis/v8"
+	"github.com/spf13/viper"
+	"os"
+)
+
+func GetRedisClient() *persist.RedisStore {
+	return persist.NewRedisStore(redis.NewClient(&redis.Options{
+		Network:  "tcp",
+		Addr:     viper.GetString("redis.connectionUri"),
+		Username: viper.GetString("redis.username"),
+		Password: os.Getenv("REDIS_CRED"),
+		DB:       viper.GetInt("redis.database"),
+	}))
+}

@@ -30,7 +30,7 @@ func GraphHandler() gin.HandlerFunc {
 		}
 		seedNode := GetNode(paperId, ctx)
 		visited := bfs(seedNode, 3, true, ctx)
-		ctx.JSON(http.StatusOK, visited)
+		ctx.IndentedJSON(http.StatusOK, visited)
 	}
 }
 
