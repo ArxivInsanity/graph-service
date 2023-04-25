@@ -3,10 +3,11 @@ package services
 import (
 	"context"
 	"encoding/json"
-	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"log"
 	"net/http"
 	"sort"
+
+	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 
 	. "github.com/ArxivInsanity/graph-service/src/util"
 	"github.com/gin-gonic/gin"
@@ -134,7 +135,6 @@ func BfsBuilder(seedPaperId string, ctx *gin.Context) map[string]Node {
 			for _, child := range nodes {
 				current.Reference = append(current.Reference, child)
 			}
-			visited[current.PaperId] = current
 			for _, child := range nodes {
 				if _, exists := visited[child.PaperId]; !exists {
 					queue = append(queue, child)
@@ -144,9 +144,11 @@ func BfsBuilder(seedPaperId string, ctx *gin.Context) map[string]Node {
 			nodes = GetNodeReferences(nodeRef, false)
 			for _, child := range nodes {
 				if _, exists := visited[child.PaperId]; !exists {
+					child.Reference = append(child.Reference, current)
 					queue = append(queue, child)
 				}
 			}
+			visited[current.PaperId] = current
 		}
 		depth -= 1
 		// if breadth > 1 {
