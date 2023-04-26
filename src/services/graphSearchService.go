@@ -11,6 +11,7 @@ import (
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j/dbtype"
 )
 
+// IsSeedPaperHandler handler func to check if give paperId is seed or not
 func IsSeedPaperHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		paperId := ctx.Param("paperId")
@@ -20,6 +21,7 @@ func IsSeedPaperHandler() gin.HandlerFunc {
 	}
 }
 
+// GraphHandler handler func for getting the graph for a given seed paper Id
 func GraphHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		paperId := ctx.Param("paperId")
@@ -41,6 +43,7 @@ func GraphHandler() gin.HandlerFunc {
 	}
 }
 
+// IsSeedPaper checks is given paper-id has been already a seed
 func IsSeedPaper(paperId string, ctx *gin.Context) bool {
 	dbContext, dbSession := GetDBConnectionFromContext(ctx)
 	isSeedCypher := "RETURN EXISTS( (:SEED_PAPER)-[:SEED]-(:PAPER {paperId: $paperId})) as isSeed"
@@ -56,6 +59,18 @@ func IsSeedPaper(paperId string, ctx *gin.Context) bool {
 	return isSeed.(bool)
 }
 
+// addSeedRelation adds seed relation to the new seed paper node
+func addSeedRelation(seedPaperId string, ctx *gin.Context) {
+	dbContext, dbSession := GetDBConnectionFromContext(ctx)
+	cypher := "MATCH (n: PAPER {paperId: $paperId}), (s: SEED_PAPER) MERGE (s) - [r:SEED] -> (n) RETURN r "
+	cypherParam := map[string]any{
+		"paperId": seedPaperId,
+	}
+	_, err := dbSession.Run(dbContext, cypher, cypherParam)
+	PanicOnErr(err)
+}
+
+// GetNode gets the seed node with the paperId
 func GetNode(rootPaperId string, ctx *gin.Context) Node {
 	dbContext, dbSession := GetDBConnectionFromContext(ctx)
 	cypher := "MATCH (p:PAPER {paperId: $rootPaperId}) RETURN p"
@@ -76,24 +91,15 @@ func GetNode(rootPaperId string, ctx *gin.Context) Node {
 	return n
 }
 
-func addSeedRelation(seedPaperId string, ctx *gin.Context) {
-	dbContext, dbSession := GetDBConnectionFromContext(ctx)
-	cypher := "MATCH (n: PAPER {paperId: $paperId}), (s: SEED_PAPER) MERGE (s) - [r:SEED] -> (n) RETURN r "
-	cypherParam := map[string]any{
-		"paperId": seedPaperId,
-	}
-	_, err := dbSession.Run(dbContext, cypher, cypherParam)
-	PanicOnErr(err)
-}
-
+// bfs performs bfs on the seed paper node and returns the graph
 func bfs(n Node, depth int, citation bool, ctx *gin.Context) map[string]Node {
 	dbContext, dbSession := GetDBConnectionFromContext(ctx)
 	queue := []Node{n}
 	visited := map[string]Node{}
 
 	for len(queue) > 0 && depth > 0 {
-		level_size := len(queue)
-		for i := 0; i < level_size; i++ {
+		levelSize := len(queue)
+		for i := 0; i < levelSize; i++ {
 			current := queue[0]
 			queue = queue[1:]
 			cypher := "MATCH (p:PAPER {paperId: $paperId}) - [r:REFERENCES] -> (n:PAPER) RETURN n"
