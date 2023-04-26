@@ -79,7 +79,7 @@ func bfsBuilder(seedPaperId string) map[string]Node {
 
 // getPaperNode function to seed paper node by getting details from S2AG API
 func getPaperNode(paperId string) Node {
-	url := viper.Get("s2ag.urlRoot").(string) + paperId + viper.Get("s2ag.paperUrlFields").(string)
+	url := viper.GetString("s2ag.urlRoot") + paperId + viper.GetString("s2ag.paperUrlFields")
 	var node Node
 	err := json.Unmarshal(FetchFromS2ag(url), &node)
 	PanicOnErr(err)

@@ -17,8 +17,8 @@ type Neo4jConnectionConfig struct {
 
 func getNeo4jConnectionConfig() Neo4jConnectionConfig {
 	return Neo4jConnectionConfig{
-		Uri:        viper.Get("neo4j.connectionUri").(string),
-		Username:   viper.Get("neo4j.username").(string),
+		Uri:        viper.GetString("neo4j.connectionUri"),
+		Username:   viper.GetString("neo4j.username"),
 		Credential: os.Getenv("NEO4J_CRED"), // read credential from os env directly
 	}
 }
