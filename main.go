@@ -37,8 +37,8 @@ func main() {
 	{
 		// Inject neo4j ctx and session in middleware
 		graphSearchGroup.Use(InjectNeo4jContextAndSession(neo4jContext, neo4jSession))
-		graphSearchGroup.Use(CachingMiddleWare(redisStore))
-		GraphSearchRoutes(graphSearchGroup)
+		cachingMiddleware := GetCachingMiddleware(redisStore)
+		GraphSearchRoutes(graphSearchGroup, cachingMiddleware)
 	}
 
 	// Default Route

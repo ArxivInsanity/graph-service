@@ -20,6 +20,6 @@ func GetRedisClient() *persist.RedisStore {
 	}))
 }
 
-func CachingMiddleWare(redisStore *persist.RedisStore) gin.HandlerFunc {
+func GetCachingMiddleware(redisStore *persist.RedisStore) gin.HandlerFunc {
 	return cache.CacheByRequestURI(redisStore, 24*time.Hour)
 }

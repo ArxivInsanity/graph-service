@@ -1,6 +1,7 @@
 package services
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 
@@ -36,6 +37,16 @@ func GraphHandler() gin.HandlerFunc {
 		seedNode := getNode(paperId, ctx)
 		visited := bfs(seedNode, 3, ctx)
 		ctx.IndentedJSON(http.StatusOK, visited)
+	}
+}
+
+// FilteredGraphHandler handler func that returns filtered graph to ui
+func FilteredGraphHandler() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var filterMap map[string]any
+		err := json.Unmarshal([]byte(ctx.Query("filter")), &filterMap)
+		PanicOnErr(err)
+		ctx.IndentedJSON(http.StatusOK, filterMap)
 	}
 }
 

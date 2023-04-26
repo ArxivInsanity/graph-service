@@ -5,8 +5,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GraphSearchRoutes(routerGroup *gin.RouterGroup) {
+func GraphSearchRoutes(routerGroup *gin.RouterGroup, cachingMiddleware gin.HandlerFunc) {
 	// defining graphBuilder Routes
 	routerGroup.GET("/isSeed/:paperId", services.IsSeedPaperHandler())
-	routerGroup.GET("/graph/:paperId", services.GraphHandler())
+	routerGroup.GET("/filteredGraph/:paperId", services.FilteredGraphHandler())
+	routerGroup.GET("/graph/:paperId", cachingMiddleware, services.GraphHandler())
 }
