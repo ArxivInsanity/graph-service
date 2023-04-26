@@ -15,7 +15,7 @@ func IsSeedPaperHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		paperId := ctx.Param("paperId")
 		log.Printf("Seed Paper handler URL Params: %v", paperId)
-		isSeed := IsSeedPaper(paperId, ctx)
+		isSeed := isSeedPaper(paperId, ctx)
 		ctx.IndentedJSON(http.StatusOK, isSeed)
 	}
 }
@@ -27,20 +27,20 @@ func GraphHandler() gin.HandlerFunc {
 		log.Printf("graph Paper handler URL Params: %v", paperId)
 
 		// check if it is a seed paper
-		isSeed := IsSeedPaper(paperId, ctx)
+		isSeed := isSeedPaper(paperId, ctx)
 
 		if !isSeed {
 			BuildGraph(paperId, ctx)
 			addSeedRelation(paperId, ctx)
 		}
-		seedNode := GetNode(paperId, ctx)
+		seedNode := getNode(paperId, ctx)
 		visited := bfs(seedNode, 3, ctx)
 		ctx.IndentedJSON(http.StatusOK, visited)
 	}
 }
 
-// IsSeedPaper checks is given paper-id has been already a seed
-func IsSeedPaper(paperId string, ctx *gin.Context) bool {
+// isSeedPaper checks is given paper-id has been already a seed
+func isSeedPaper(paperId string, ctx *gin.Context) bool {
 	dbContext, dbSession := GetDBConnectionFromContext(ctx)
 	isSeedCypher := "RETURN EXISTS( (:SEED_PAPER)-[:SEED]-(:PAPER {paperId: $paperId})) as isSeed"
 	cypherParam := map[string]any{
@@ -66,8 +66,8 @@ func addSeedRelation(seedPaperId string, ctx *gin.Context) {
 	PanicOnErr(err)
 }
 
-// GetNode gets the seed node with the paperId
-func GetNode(rootPaperId string, ctx *gin.Context) Node {
+// getNode gets the seed node with the paperId
+func getNode(rootPaperId string, ctx *gin.Context) Node {
 	dbContext, dbSession := GetDBConnectionFromContext(ctx)
 	cypher := "MATCH (p:PAPER {paperId: $rootPaperId}) RETURN p"
 	// referenceCypher := "MATCH (p:PAPER {paperId: $rootPaperId})-[r:REFERENCE]-(n:PAPER) RETURN p, n"

@@ -25,19 +25,19 @@ func BuildGraphHandler() gin.HandlerFunc {
 
 // BuildGraph builds a graph using bfs algo for a new seed paper and returns the graph
 func BuildGraph(seedPaperId string, ctx *gin.Context) map[string]Node {
-	graph := BfsBuilder(seedPaperId)
+	graph := bfsBuilder(seedPaperId)
 	log.Printf("Build graph Paper details : %v", graph)
 	persistGraphToDB(graph, ctx)
 	return graph
 }
 
-// BfsBuilder implementation of the bfs algo that builds the graph
-func BfsBuilder(seedPaperId string) map[string]Node {
+// bfsBuilder implementation of the bfs algo that builds the graph
+func bfsBuilder(seedPaperId string) map[string]Node {
 	depth := viper.GetInt("graph.depth")
 	breadth := viper.GetInt("graph.refBreadth")
 	var nodeRef []NodeReferences
 	var nodes []Node
-	n := GetPaperNode(seedPaperId)
+	n := getPaperNode(seedPaperId)
 	queue := []Node{n}
 	visited := map[string]Node{}
 
@@ -46,8 +46,8 @@ func BfsBuilder(seedPaperId string) map[string]Node {
 		for i := 0; i < levelSize; i++ {
 			current := queue[0]
 			queue = queue[1:]
-			nodeRef = GetReferences(current.PaperId, true, breadth)
-			nodes = GetNodeReferences(nodeRef, true)
+			nodeRef = getReferences(current.PaperId, true, breadth)
+			nodes = getNodeReferences(nodeRef, true)
 			for _, child := range nodes {
 				if child.PaperId != "" {
 					current.Reference = append(current.Reference, child)
@@ -58,8 +58,8 @@ func BfsBuilder(seedPaperId string) map[string]Node {
 					queue = append(queue, child)
 				}
 			}
-			nodeRef = GetReferences(current.PaperId, false, breadth)
-			nodes = GetNodeReferences(nodeRef, false)
+			nodeRef = getReferences(current.PaperId, false, breadth)
+			nodes = getNodeReferences(nodeRef, false)
 			for _, child := range nodes {
 				if _, exists := visited[child.PaperId]; !exists && child.PaperId != "" {
 					child.Reference = append(child.Reference, current)
@@ -77,8 +77,8 @@ func BfsBuilder(seedPaperId string) map[string]Node {
 	return visited
 }
 
-// GetPaperNode function to seed paper node by getting details from S2AG API
-func GetPaperNode(paperId string) Node {
+// getPaperNode function to seed paper node by getting details from S2AG API
+func getPaperNode(paperId string) Node {
 	url := viper.Get("s2ag.urlRoot").(string) + paperId + viper.Get("s2ag.paperUrlFields").(string)
 	var node Node
 	err := json.Unmarshal(FetchFromS2ag(url), &node)
@@ -86,8 +86,8 @@ func GetPaperNode(paperId string) Node {
 	return node
 }
 
-// GetReferences function to get all the references and citations for a paperId
-func GetReferences(paperId string, reference bool, breadth int) []NodeReferences {
+// getReferences function to get all the references and citations for a paperId
+func getReferences(paperId string, reference bool, breadth int) []NodeReferences {
 	url := viper.GetString("s2ag.urlRoot") + paperId
 	if reference {
 		url += viper.GetString("s2ag.referenceUrlFields")
@@ -113,8 +113,8 @@ func GetReferences(paperId string, reference bool, breadth int) []NodeReferences
 	}
 }
 
-// GetNodeReferences function to get all the citation or reference node
-func GetNodeReferences(nodeReferences []NodeReferences, reference bool) []Node {
+// getNodeReferences function to get all the citation or reference node
+func getNodeReferences(nodeReferences []NodeReferences, reference bool) []Node {
 	var nodes []Node
 	for _, child := range nodeReferences {
 		paperId := ""
@@ -123,7 +123,7 @@ func GetNodeReferences(nodeReferences []NodeReferences, reference bool) []Node {
 		} else {
 			paperId = child.CitingPaper.CitPaperId
 		}
-		nodes = append(nodes, GetPaperNode(paperId))
+		nodes = append(nodes, getPaperNode(paperId))
 	}
 	return nodes
 }
