@@ -12,38 +12,37 @@ import (
 )
 
 func init() {
-	// loading env vars
+	// Loading ENV vars
 	loadEnv()
 }
 
 func main() {
-	// init engine
+	// Init Engine
 	r := gin.Default()
 
-	// get Neo4j DB connection
+	// Get Neo4j DB connection
 	neo4jContext, neo4jSession := GetNeo4jContextAndSession()
 
-	// get Redis Connection
+	// Get Redis connection
 	redisStore := GetRedisClient()
 
-	// load routes
+	// Load routes
 	graphBuilderGroup := r.Group("/graphBuilder")
 	{
-		// inject neo4j ctx and session in middleware
+		// Inject neo4j ctx and session in middleware
 		graphBuilderGroup.Use(InjectNeo4jContextAndSession(neo4jContext, neo4jSession))
 		GraphBuilderRoutes(graphBuilderGroup)
 	}
 	graphSearchGroup := r.Group("/graphSearch")
 	{
-		// inject neo4j ctx and session in middleware
+		// Inject neo4j ctx and session in middleware
 		graphSearchGroup.Use(InjectNeo4jContextAndSession(neo4jContext, neo4jSession))
 		graphSearchGroup.Use(CachingMiddleWare(redisStore))
 		GraphSearchRoutes(graphSearchGroup)
 	}
 
-	// default route
+	// Default Route
 	r.GET("/", func(c *gin.Context) {
-		//c.Header("Content-Type", "application/json")
 		c.IndentedJSON(http.StatusOK, "Hello Welcome to ArxivInsanity GraphBuilder Service")
 	})
 
@@ -52,7 +51,7 @@ func main() {
 }
 
 func loadEnv() {
-	// loading environment variables
+	// Loading Environment Variables
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath("./resources")
 	err := viper.ReadInConfig()
