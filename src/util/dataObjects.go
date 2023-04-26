@@ -26,4 +26,13 @@ type Node struct {
 	Title         string   `json:"title"`
 	Authors       []Author `json:"authors"`
 	Reference     []Node   `json:"node"`
+	AuthorsList   []string
+}
+
+func GetStringList(itemList any) []string {
+	var stringList []string
+	for _, itemList := range itemList.([]interface{}) {
+		stringList = append(stringList, itemList.(string))
+	}
+	return stringList
 }

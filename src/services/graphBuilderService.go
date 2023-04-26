@@ -83,6 +83,10 @@ func getPaperNode(paperId string) Node {
 	var node Node
 	err := json.Unmarshal(FetchFromS2ag(url), &node)
 	PanicOnErr(err)
+	// convert author objects to list of author names
+	for _, author := range node.Authors {
+		node.AuthorsList = append(node.AuthorsList, author.Name)
+	}
 	return node
 }
 
@@ -147,12 +151,13 @@ func persistGraphToDB(graph map[string]Node, ctx *gin.Context) {
 
 // checkAndCreateNode create neo4j paper node if it does not exist in db
 func checkAndCreateNode(node Node, dbContext context.Context, dbSession neo4j.SessionWithContext) {
-	cypher := "MERGE (p: PAPER {paperId: $paperId}) SET p = {paperId: $paperId, citationCount: $citationCount, title: $title, year: $year} return p"
+	cypher := "MERGE (p: PAPER {paperId: $paperId}) SET p = {paperId: $paperId, citationCount: $citationCount, title: $title, year: $year, authorList: $authorList} return p"
 	cypherParam := map[string]any{
 		"paperId":       node.PaperId,
 		"citationCount": node.CitationCount,
 		"title":         node.Title,
 		"year":          node.Year,
+		"authorList":    node.AuthorsList,
 	}
 	_, err := dbSession.Run(dbContext, cypher, cypherParam)
 	PanicOnErr(err)

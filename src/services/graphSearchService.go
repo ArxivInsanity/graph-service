@@ -83,7 +83,9 @@ func getNode(rootPaperId string, ctx *gin.Context) Node {
 	n := Node{PaperId: rootPaperId,
 		CitationCount: nodeNeo4jProps["citationCount"].(int64),
 		Year:          nodeNeo4jProps["year"].(int64),
-		Title:         nodeNeo4jProps["title"].(string)}
+		Title:         nodeNeo4jProps["title"].(string),
+		AuthorsList:   GetStringList(nodeNeo4jProps["authorList"]),
+	}
 	return n
 }
 
@@ -112,7 +114,9 @@ func bfs(n Node, depth int, ctx *gin.Context) map[string]Node {
 				child := Node{PaperId: linkNeo4jProps["paperId"].(string),
 					CitationCount: linkNeo4jProps["citationCount"].(int64),
 					Year:          linkNeo4jProps["year"].(int64),
-					Title:         linkNeo4jProps["title"].(string)}
+					Title:         linkNeo4jProps["title"].(string),
+					AuthorsList:   GetStringList(linkNeo4jProps["authorList"]),
+				}
 				current.Reference = append(current.Reference, child)
 			}
 			for _, child := range current.Reference {
@@ -135,7 +139,9 @@ func bfs(n Node, depth int, ctx *gin.Context) map[string]Node {
 				parent := Node{PaperId: linkNeo4jProps["paperId"].(string),
 					CitationCount: linkNeo4jProps["citationCount"].(int64),
 					Year:          linkNeo4jProps["year"].(int64),
-					Title:         linkNeo4jProps["title"].(string)}
+					Title:         linkNeo4jProps["title"].(string),
+					AuthorsList:   GetStringList(linkNeo4jProps["authorList"]),
+				}
 				if _, exists := visited[parent.PaperId]; !exists {
 					queue = append(queue, parent)
 				}
