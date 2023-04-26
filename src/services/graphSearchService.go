@@ -1,7 +1,6 @@
 package services
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 
@@ -11,7 +10,7 @@ import (
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j/dbtype"
 )
 
-// IsSeedPaperHandler handler func to check if give paperId is seed or not
+// IsSeedPaperHandler handler func to check if you give paperId is seed or not
 func IsSeedPaperHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		paperId := ctx.Param("paperId")
@@ -28,17 +27,14 @@ func GraphHandler() gin.HandlerFunc {
 		log.Printf("graph Paper handler URL Params: %v", paperId)
 
 		// check if it is a seed paper
-		isSeedRespBody := FetchFromGraphService("/graphSearch/isSeed/" + paperId)
-		var isSeed bool
-		err := json.Unmarshal(isSeedRespBody, &isSeed)
-		PanicOnErr(err)
+		isSeed := IsSeedPaper(paperId, ctx)
 
 		if !isSeed {
 			BuildGraph(paperId, ctx)
 			addSeedRelation(paperId, ctx)
 		}
 		seedNode := GetNode(paperId, ctx)
-		visited := bfs(seedNode, 3, true, ctx)
+		visited := bfs(seedNode, 3, ctx)
 		ctx.IndentedJSON(http.StatusOK, visited)
 	}
 }
@@ -92,7 +88,7 @@ func GetNode(rootPaperId string, ctx *gin.Context) Node {
 }
 
 // bfs performs bfs on the seed paper node and returns the graph
-func bfs(n Node, depth int, citation bool, ctx *gin.Context) map[string]Node {
+func bfs(n Node, depth int, ctx *gin.Context) map[string]Node {
 	dbContext, dbSession := GetDBConnectionFromContext(ctx)
 	queue := []Node{n}
 	visited := map[string]Node{}

@@ -13,7 +13,7 @@ s2ag:
   citationUrlFields: /citations?fields=paperId,isInfluential
   referenceUrlFields: /references?fields=paperId,isInfluential
 graph:
-  depth: 2
+  depth: 3
   refBreadth: 2
   citBreadth: 2
 service:

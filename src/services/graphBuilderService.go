@@ -25,14 +25,14 @@ func BuildGraphHandler() gin.HandlerFunc {
 
 // BuildGraph builds a graph using bfs algo for a new seed paper and returns the graph
 func BuildGraph(seedPaperId string, ctx *gin.Context) map[string]Node {
-	graph := BfsBuilder(seedPaperId, ctx)
+	graph := BfsBuilder(seedPaperId)
 	log.Printf("Build graph Paper details : %v", graph)
 	persistGraphToDB(graph, ctx)
 	return graph
 }
 
 // BfsBuilder implementation of the bfs algo that builds the graph
-func BfsBuilder(seedPaperId string, ctx *gin.Context) map[string]Node {
+func BfsBuilder(seedPaperId string) map[string]Node {
 	depth := viper.GetInt("graph.depth")
 	breadth := viper.GetInt("graph.refBreadth")
 	var nodeRef []NodeReferences
@@ -49,17 +49,19 @@ func BfsBuilder(seedPaperId string, ctx *gin.Context) map[string]Node {
 			nodeRef = GetReferences(current.PaperId, true, breadth)
 			nodes = GetNodeReferences(nodeRef, true)
 			for _, child := range nodes {
-				current.Reference = append(current.Reference, child)
+				if child.PaperId != "" {
+					current.Reference = append(current.Reference, child)
+				}
 			}
 			for _, child := range nodes {
-				if _, exists := visited[child.PaperId]; !exists {
+				if _, exists := visited[child.PaperId]; !exists && child.PaperId != "" {
 					queue = append(queue, child)
 				}
 			}
 			nodeRef = GetReferences(current.PaperId, false, breadth)
 			nodes = GetNodeReferences(nodeRef, false)
 			for _, child := range nodes {
-				if _, exists := visited[child.PaperId]; !exists {
+				if _, exists := visited[child.PaperId]; !exists && child.PaperId != "" {
 					child.Reference = append(child.Reference, current)
 					queue = append(queue, child)
 				}
@@ -75,7 +77,7 @@ func BfsBuilder(seedPaperId string, ctx *gin.Context) map[string]Node {
 	return visited
 }
 
-// GetPaperNode function to seed paper node buy getting details from S2AG API
+// GetPaperNode function to seed paper node by getting details from S2AG API
 func GetPaperNode(paperId string) Node {
 	url := viper.Get("s2ag.urlRoot").(string) + paperId + viper.Get("s2ag.paperUrlFields").(string)
 	var node Node
@@ -143,9 +145,9 @@ func persistGraphToDB(graph map[string]Node, ctx *gin.Context) {
 	}
 }
 
-// checkAndCreateNode create neo4j paper node if it does not exists in db
+// checkAndCreateNode create neo4j paper node if it does not exist in db
 func checkAndCreateNode(node Node, dbContext context.Context, dbSession neo4j.SessionWithContext) {
-	cypher := "MERGE (p: PAPER {paperId: $paperId, citationCount: $citationCount, title: $title, year: $year}) return p"
+	cypher := "MERGE (p: PAPER {paperId: $paperId}) SET p = {paperId: $paperId, citationCount: $citationCount, title: $title, year: $year} return p"
 	cypherParam := map[string]any{
 		"paperId":       node.PaperId,
 		"citationCount": node.CitationCount,
