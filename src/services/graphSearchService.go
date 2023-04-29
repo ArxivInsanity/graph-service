@@ -91,7 +91,7 @@ func FilteredGraphHandler() gin.HandlerFunc {
 		}
 
 		// edge filter
-		var filteredEdges []map[string]any
+		filteredEdges := []map[string]any{}
 		for _, edges := range graph["edges"].([]interface{}) {
 			edges := edges.(map[string]any)
 			_, existSource := filteredNodes[edges["source"].(string)]
@@ -101,7 +101,7 @@ func FilteredGraphHandler() gin.HandlerFunc {
 			}
 		}
 
-		var nodeList []any
+		nodeList := []any{}
 		for _, node := range filteredNodes {
 			nodeList = append(nodeList, node)
 		}
