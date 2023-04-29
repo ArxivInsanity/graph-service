@@ -47,14 +47,28 @@ func FilteredGraphHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		paperId := ctx.Param("paperId")
 		authorFilter := ctx.QueryArray("authors")
-		yearFilter := ctx.QueryArray("year")
-		minCitationFilter, err := strconv.ParseInt(ctx.Query("minCitation"), 10, 64)
-		PanicOnErr(err)
+		minYearFilter := ctx.Query("minYear")
+		maxYearFilter := ctx.Query("maxYear")
+		minCitationFilter := ctx.Query("minCitation")
+
+		minCitation := int64(0)
+		if minCitationFilter != "" {
+			minCitation, _ = strconv.ParseInt(minCitationFilter, 10, 64)
+		}
+
+		minYear := int64(0)
+		maxYear := int64(9999)
+		if minYearFilter != "" {
+			minYear, _ = strconv.ParseInt(minYearFilter, 10, 64)
+		}
+		if maxYearFilter != "" {
+			maxYear, _ = strconv.ParseInt(maxYearFilter, 10, 64)
+		}
 
 		// get complete graph
 		var graph map[string]any
 		graphRespBody := FetchFromGraphService("/graphSearch/graph/" + paperId)
-		err = json.Unmarshal(graphRespBody, &graph)
+		err := json.Unmarshal(graphRespBody, &graph)
 		PanicOnErr(err)
 
 		// filter
@@ -65,22 +79,26 @@ func FilteredGraphHandler() gin.HandlerFunc {
 			// author filter
 			keepAuthorNode := false
 			node := node.(map[string]any)
-			for _, author := range authorFilter {
-				if slices.Contains(GetStringList(node["authorList"]), author) {
-					keepAuthorNode = true
-					break
+			if len(authorFilter) > 0 {
+				for _, author := range authorFilter {
+					if slices.Contains(GetStringList(node["authorList"]), author) {
+						keepAuthorNode = true
+						break
+					}
 				}
+			} else {
+				keepAuthorNode = true
 			}
+
 			keepNode = keepAuthorNode
 
 			// year, minCitationCount
 			paperYear := int64(node["year"].(float64))
 			paperCitationCount := int64(node["citationCount"].(float64))
-			minYear, _ := strconv.ParseInt(yearFilter[0], 10, 64)
-			maxYear, _ := strconv.ParseInt(yearFilter[1], 10, 64)
-			if paperYear <= minYear && paperYear >= maxYear {
+
+			if !keepNode && paperYear < minYear && paperYear > maxYear {
 				keepNode = false
-			} else if paperCitationCount < minCitationFilter {
+			} else if !keepNode && paperCitationCount < minCitation {
 				keepNode = false
 			}
 
