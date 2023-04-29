@@ -46,7 +46,7 @@ func main() {
 		c.IndentedJSON(http.StatusOK, "Hello Welcome to ArxivInsanity GraphBuilder Service")
 	})
 
-	err := r.Run()
+	err := r.Run(":8081")
 	defer PanicOnClosureError(err, neo4jContext, neo4jSession)
 }
 

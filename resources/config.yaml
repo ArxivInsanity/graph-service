@@ -17,4 +17,4 @@ graph:
   refBreadth: 2
   citBreadth: 2
 service:
-  baseUrl: "http://localhost:8080"
+  baseUrl: "http://localhost:8081"

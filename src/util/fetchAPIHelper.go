@@ -28,7 +28,11 @@ func FetchFromGraphService(url string) []byte {
 	client := &http.Client{}
 
 	// append url to baseurl
-	absoluteUrl := viper.GetString("service.baseUrl") + url
+	baseUrl := os.Getenv("GRAPH_SERVICE_URL")
+	if baseUrl == "" {
+		baseUrl = viper.GetString("service.baseUrl")
+	}
+	absoluteUrl := baseUrl + url
 
 	req, _ := http.NewRequest("GET", absoluteUrl, nil)
 	start := time.Now()

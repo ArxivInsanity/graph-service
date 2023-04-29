@@ -76,30 +76,28 @@ func FilteredGraphHandler() gin.HandlerFunc {
 
 		for _, node := range graph["nodes"].([]interface{}) {
 			keepNode := true
-			// author filter
-			keepAuthorNode := false
 			node := node.(map[string]any)
-			if len(authorFilter) > 0 {
-				for _, author := range authorFilter {
-					if slices.Contains(GetStringList(node["authorList"]), author) {
-						keepAuthorNode = true
-						break
-					}
-				}
-			} else {
-				keepAuthorNode = true
-			}
 
-			keepNode = keepAuthorNode
-
-			// year, minCitationCount
 			paperYear := int64(node["year"].(float64))
 			paperCitationCount := int64(node["citationCount"].(float64))
 
-			if !keepNode && paperYear < minYear && paperYear > maxYear {
-				keepNode = false
-			} else if !keepNode && paperCitationCount < minCitation {
-				keepNode = false
+			// author filter
+			if len(authorFilter) > 0 {
+				keepNode = applyAuthorFilter(node, authorFilter)
+			}
+
+			// year filter
+			if keepNode {
+				if paperYear < minYear || paperYear > maxYear {
+					keepNode = false
+				}
+			}
+
+			// min citation filter
+			if keepNode {
+				if paperCitationCount < minCitation {
+					keepNode = false
+				}
 			}
 
 			if keepNode {
@@ -295,4 +293,16 @@ func transformGraphToGS(graph map[string]Node, seedPaperId string) map[string]an
 		"nodes": nodeList,
 		"edges": edges,
 	}
+}
+
+func applyAuthorFilter(node map[string]any, authorFilter []string) bool {
+	keepAuthorNode := false
+	for _, author := range authorFilter {
+		if slices.Contains(GetStringList(node["authorList"]), author) {
+			keepAuthorNode = true
+			break
+		}
+	}
+
+	return keepAuthorNode
 }
