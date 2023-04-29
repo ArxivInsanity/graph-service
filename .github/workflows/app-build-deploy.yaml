@@ -1,0 +1,88 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+# GitHub recommends pinning actions to a commit SHA.
+# To get a newer version, you will need to update the SHA.
+# You can also reference a tag or branch, but the action may change without warning.
+
+name: Build and Deploy to GKE
+
+on:
+  workflow_dispatch:
+    inputs:
+      build:
+        type: boolean
+        description: Rebuild the docker image?
+      deploy:
+        type: boolean
+        description: Deploy the application on GKE?
+
+env:
+  DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
+  DOCKERHUB_PASS: ${{ secrets.DOCKERHUB_PASS }}
+  IMAGE_TAG: arxiv-insanity:graph-service
+  TF_API_TOKEN: ${{ secrets.TF_API_TOKEN }}
+
+jobs:
+  setup-build-publish-deploy:
+    name: Setup, Build, Publish, and Deploy
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+      # Login to docker hub
+    - name: docker login
+      if: ${{inputs.build}}
+      run: docker login -u $DOCKERHUB_USER -p $DOCKERHUB_PASS 
+
+    # Setup the buildx to build the docker image
+    - name: Set up Docker Buildx
+      if: ${{inputs.build}}
+      uses: docker/setup-buildx-action@v2
+
+    # Build and push the docker image
+    - name: Build the Docker image
+      if: ${{inputs.build}}
+      run: docker buildx build --file ./Dockerfile --platform=linux/arm64,linux/amd64 --tag $DOCKERHUB_USER/$IMAGE_TAG --output type=image,push=true .
+
+    # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
+    - name: Setup Terraform
+      if: ${{inputs.deploy}}
+      uses: hashicorp/setup-terraform@v1
+      with:
+        cli_config_credentials_token: ${{ env.TF_API_TOKEN }}
+
+    # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
+    - name: Terraform Init
+      if: ${{inputs.deploy}}
+      working-directory: ./terraform
+      run: terraform init
+      env:
+        TF_CLI_ARGS: '-var-file="variables/prod.tfvars"'
+
+    # Checks that all Terraform configuration files adhere to a canonical format
+    - name: Terraform Format
+      if: ${{inputs.deploy}}
+      working-directory: ./terraform  
+      run: terraform fmt -check
+
+    # Generates an execution plan for Terraform
+    - name: Terraform Plan
+      if: ${{inputs.deploy}}
+      working-directory: ./terraform
+      run: terraform plan -input=false
+      env:
+        TF_CLI_ARGS: '-var-file="variables/prod.tfvars"'
+
+      # Runs the terraform apply
+    - name: Terraform Apply
+      if: ${{inputs.deploy}}
+      working-directory: ./terraform
+      run: terraform apply -auto-approve -input=false
+      env:
+        TF_CLI_ARGS: '-var-file="variables/prod.tfvars"'
