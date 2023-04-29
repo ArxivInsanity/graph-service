@@ -2,13 +2,14 @@ package services
 
 import (
 	"encoding/json"
-	"log"
-	"net/http"
-
 	. "github.com/ArxivInsanity/graph-service/src/util"
 	"github.com/gin-gonic/gin"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j/dbtype"
+	"golang.org/x/exp/slices"
+	"log"
+	"net/http"
+	"strconv"
 )
 
 // IsSeedPaperHandler handler func to check if you give paperId is seed or not
@@ -36,17 +37,80 @@ func GraphHandler() gin.HandlerFunc {
 		}
 		seedNode := getNode(paperId, ctx)
 		visited := bfs(seedNode, 3, ctx)
-		ctx.IndentedJSON(http.StatusOK, visited)
+		transformedGraph := transformGraphToGS(visited, paperId)
+		ctx.IndentedJSON(http.StatusOK, transformedGraph)
 	}
 }
 
 // FilteredGraphHandler handler func that returns filtered graph to ui
 func FilteredGraphHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		var filterMap map[string]any
-		err := json.Unmarshal([]byte(ctx.Query("filter")), &filterMap)
+		paperId := ctx.Param("paperId")
+		authorFilter := ctx.QueryArray("authors")
+		yearFilter := ctx.QueryArray("year")
+		minCitationFilter, err := strconv.ParseInt(ctx.Query("minCitation"), 10, 64)
 		PanicOnErr(err)
-		ctx.IndentedJSON(http.StatusOK, filterMap)
+
+		// get complete graph
+		var graph map[string]any
+		graphRespBody := FetchFromGraphService("/graphSearch/graph/" + paperId)
+		err = json.Unmarshal(graphRespBody, &graph)
+		PanicOnErr(err)
+
+		// filter
+		filteredNodes := map[string]any{}
+
+		for _, node := range graph["nodes"].([]interface{}) {
+			keepNode := true
+			// author filter
+			keepAuthorNode := false
+			node := node.(map[string]any)
+			for _, author := range authorFilter {
+				if slices.Contains(GetStringList(node["authorList"]), author) {
+					keepAuthorNode = true
+					break
+				}
+			}
+			keepNode = keepAuthorNode
+
+			// year, minCitationCount
+			paperYear := int64(node["year"].(float64))
+			paperCitationCount := int64(node["citationCount"].(float64))
+			minYear, _ := strconv.ParseInt(yearFilter[0], 10, 64)
+			maxYear, _ := strconv.ParseInt(yearFilter[1], 10, 64)
+			if paperYear <= minYear && paperYear >= maxYear {
+				keepNode = false
+			} else if paperCitationCount < minCitationFilter {
+				keepNode = false
+			}
+
+			if keepNode {
+				filteredNodes[node["id"].(string)] = node
+			}
+
+		}
+
+		// edge filter
+		var filteredEdges []map[string]any
+		for _, edges := range graph["edges"].([]interface{}) {
+			edges := edges.(map[string]any)
+			_, existSource := filteredNodes[edges["source"].(string)]
+			_, existTarget := filteredNodes[edges["target"].(string)]
+			if existSource && existTarget {
+				filteredEdges = append(filteredEdges, edges)
+			}
+		}
+
+		var nodeList []any
+		for _, node := range filteredNodes {
+			nodeList = append(nodeList, node)
+		}
+		filterGraph := map[string]any{
+			"nodes": nodeList,
+			"edges": filteredEdges,
+		}
+
+		ctx.IndentedJSON(http.StatusOK, filterGraph)
 	}
 }
 
@@ -162,4 +226,55 @@ func bfs(n Node, depth int, ctx *gin.Context) map[string]Node {
 		depth -= 1
 	}
 	return visited
+}
+
+func createG6Node(paperDetails Node, seedPaperId string) map[string]any {
+	donutAttr := map[string]int{}
+
+	if paperDetails.PaperId == seedPaperId {
+		donutAttr["seed"] = 100
+		donutAttr["notSeed"] = 0
+	} else {
+		donutAttr["seed"] = 0
+		donutAttr["notSeed"] = 100
+	}
+	return map[string]any{
+		"id":            paperDetails.PaperId,
+		"label":         paperDetails.Title,
+		"donutAttrs":    donutAttr,
+		"year":          paperDetails.Year,
+		"authorList":    paperDetails.AuthorsList,
+		"citationCount": paperDetails.CitationCount,
+	}
+}
+func transformGraphToGS(graph map[string]Node, seedPaperId string) map[string]any {
+	nodes := map[string]any{}
+	var edges []map[string]any
+
+	for paperId, paper := range graph {
+		if _, exists := nodes[paperId]; !exists {
+			nodes[paperId] = createG6Node(paper, seedPaperId)
+		}
+		for _, childPaper := range paper.Reference {
+			if _, exists := nodes[childPaper.PaperId]; !exists {
+				nodes[childPaper.PaperId] = createG6Node(childPaper, seedPaperId)
+			}
+			edgeDetails := map[string]any{
+				"source": paperId,
+				"target": childPaper.PaperId,
+				"size":   2,
+			}
+			edges = append(edges, edgeDetails)
+		}
+	}
+
+	// add to node slice
+	var nodeList []any
+	for _, node := range nodes {
+		nodeList = append(nodeList, node)
+	}
+	return map[string]any{
+		"nodes": nodeList,
+		"edges": edges,
+	}
 }
