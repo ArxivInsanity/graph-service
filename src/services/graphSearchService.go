@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 // IsSeedPaperHandler handler func to check if you give paperId is seed or not
@@ -46,7 +47,7 @@ func GraphHandler() gin.HandlerFunc {
 func FilteredGraphHandler() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		paperId := ctx.Param("paperId")
-		authorFilter := ctx.QueryArray("authors")
+		authorFilter := ctx.Query("authors")
 		minYearFilter := ctx.Query("minYear")
 		maxYearFilter := ctx.Query("maxYear")
 		minCitationFilter := ctx.Query("minCitation")
@@ -82,8 +83,8 @@ func FilteredGraphHandler() gin.HandlerFunc {
 			paperCitationCount := int64(node["citationCount"].(float64))
 
 			// author filter
-			if len(authorFilter) > 0 {
-				keepNode = applyAuthorFilter(node, authorFilter)
+			if authorFilter != "" {
+				keepNode = applyAuthorFilter(node, strings.Split(authorFilter, ","))
 			}
 
 			// year filter
